@@ -144,6 +144,12 @@
             <span class="drawer-nav-icon">🌐</span> <%= lang === 'ar' ? 'English' : 'العربية' %>
           </a>
         </li>
+        <li>
+          <button type="button" id="notifToggleBtn" class="drawer-nav-item notif-toggle-btn" onclick="enableNotifications()">
+            <span class="drawer-nav-icon">🔔</span>
+            <span class="drawer-nav-label"><%= t('notif_enable_btn') %></span>
+          </button>
+        </li>
       </ul>
 
       <hr class="drawer-divider">
@@ -174,7 +180,7 @@
 
       <!-- مساحة القرص الفعلية على الجهاز -->
       <% if (storageStats.disk.total > 0) { %>
-        <p class="drawer-sub px" style="margin-top:14px;"><%= t('disk_space_label') %></p>
+        <p class="drawer-sub px" style="margin-top:8px;"><%= t('disk_space_label') %></p>
         <div class="disk-bar">
           <div class="disk-bar-fill" style="width: <%= (storageStats.disk.used / storageStats.disk.total * 100).toFixed(1) %>%;"></div>
         </div>
@@ -192,6 +198,13 @@
     </div>
   </aside>
 
+  <script>
+    window.NOTIF_STRINGS = {
+      enabled: <%- JSON.stringify(t('notif_enabled_msg')) %>,
+      denied: <%- JSON.stringify(t('notif_denied_msg')) %>,
+      unsupported: <%- JSON.stringify(t('notif_unsupported_msg')) %>,
+    };
+  </script>
   <script src="/script.js"></script>
 </body>
 </html>
