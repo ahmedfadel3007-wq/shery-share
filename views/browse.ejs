@@ -145,9 +145,10 @@
           </a>
         </li>
         <li>
-          <button type="button" id="notifToggleBtn" class="drawer-nav-item notif-toggle-btn" onclick="enableNotifications()">
+          <button type="button" id="notifToggleBtn" class="drawer-nav-item notif-toggle-btn" onclick="toggleNotifications()">
             <span class="drawer-nav-icon">🔔</span>
-            <span class="drawer-nav-label"><%= t('notif_enable_btn') %></span>
+            <span class="drawer-nav-label" id="notifToggleLabel"><%= t('notif_enable_btn') %></span>
+            <span class="notif-switch" id="notifSwitch"><span class="notif-switch-knob"></span></span>
           </button>
         </li>
       </ul>
@@ -203,6 +204,7 @@
       enabled: <%- JSON.stringify(t('notif_enabled_msg')) %>,
       denied: <%- JSON.stringify(t('notif_denied_msg')) %>,
       unsupported: <%- JSON.stringify(t('notif_unsupported_msg')) %>,
+      enableLabel: <%- JSON.stringify(t('notif_enable_btn')) %>,
     };
   </script>
   <script src="/script.js"></script>
