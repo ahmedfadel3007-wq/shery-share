@@ -26,8 +26,11 @@
       <h2 class="radar-title"><%= t('radar_title') %></h2>
       <p class="radar-sub"><%= t('radar_sub') %></p>
 
+      <button type="button" id="radarSearchBtn" class="btn radar-search-btn" onclick="startRadarSearch()"><%= t('radar_search_btn') %></button>
+      <p id="radarStatus" class="radar-status"></p>
+
       <div class="radar-wrap">
-        <div class="radar-rings">
+        <div id="radarRings" class="radar-rings idle">
           <div class="radar-ring r3"></div>
           <div class="radar-ring r2"></div>
           <div class="radar-ring r1"></div>
@@ -42,7 +45,7 @@
                const cx = (130 + dist * Math.cos(rad)).toFixed(1);
                const cy = (130 + dist * Math.sin(rad)).toFixed(1);
           %>
-            <button type="button" class="radar-device" style="left: <%= cx %>px; top: <%= cy %>px;" onclick="selectDevice('<%= u %>')">
+            <button type="button" class="radar-device radar-device-hidden" style="left: <%= cx %>px; top: <%= cy %>px; transition-delay: <%= (i * 0.35).toFixed(2) %>s;" onclick="selectDevice('<%= u %>')">
               <span class="radar-device-dot"></span>
               <span class="radar-device-label">👤 <%= u %></span>
             </button>
@@ -81,6 +84,39 @@
     }
     function closeConfirm() {
       document.getElementById('confirmSendModal').classList.remove('open');
+    }
+
+    const RADAR_TEXT = {
+      searching: <%- JSON.stringify(t('radar_searching')) %>,
+      found: <%- JSON.stringify(
+        otherUsers.length === 0 ? t('radar_found_none') :
+        otherUsers.length === 1 ? t('radar_found_one') :
+        t('radar_found_many', { n: otherUsers.length })
+      ) %>
+    };
+
+    function startRadarSearch() {
+      const btn = document.getElementById('radarSearchBtn');
+      const status = document.getElementById('radarStatus');
+      const rings = document.getElementById('radarRings');
+      const devices = Array.from(document.querySelectorAll('.radar-device'));
+
+      btn.disabled = true;
+      rings.classList.remove('idle');
+      rings.classList.add('scanning');
+      status.textContent = RADAR_TEXT.searching;
+      status.classList.add('scanning-text');
+
+      devices.forEach(d => d.classList.remove('radar-device-hidden'));
+
+      const revealTime = 1600 + devices.length * 350;
+      setTimeout(() => {
+        rings.classList.remove('scanning');
+        status.textContent = RADAR_TEXT.found;
+        status.classList.remove('scanning-text');
+        status.classList.add('found-text');
+        btn.disabled = false;
+      }, revealTime);
     }
   </script>
   <script src="/script.js"></script>
