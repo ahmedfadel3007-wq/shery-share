@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول - Shery Share</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#4a3fa8">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body class="auth-page">
+  <div class="auth-box">
+    <h1>🌩️ Shery Share</h1>
+    <h2>تسجيل الدخول</h2>
+
+    <% if (registered) { %>
+      <div class="msg success">تم إنشاء الحساب بنجاح، سجّل دخولك دلوقتي</div>
+    <% } %>
+    <% if (error) { %>
+      <div class="msg error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/login">
+      <label>اسم المستخدم</label>
+      <input type="text" name="username" required autofocus>
+
+      <label>الباسورد</label>
+      <input type="password" name="password" required>
+
+      <button type="submit">دخول</button>
+    </form>
+
+    <p class="switch">معاك حساب جديد؟ <a href="/register">سجّل دلوقتي</a></p>
+  </div>
+  <script src="/script.js"></script>
+</body>
+</html>
