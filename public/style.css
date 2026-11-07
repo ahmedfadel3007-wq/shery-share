@@ -384,6 +384,16 @@ body {
   position: relative;
 }
 .drawer-nav-item:hover { background: var(--bg); }
+button.drawer-nav-item {
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+.notif-toggle-btn.notif-on .drawer-nav-icon { background: #e7f8ee; }
+.notif-toggle-btn.notif-on .drawer-nav-label::after { content: " ✓"; color: var(--success); }
 .drawer-nav-icon {
   width: 27px;
   height: 27px;

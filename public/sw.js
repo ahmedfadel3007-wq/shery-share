@@ -65,3 +65,43 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+
+// استقبال إشعار دفع (Push) من السيرفر وعرضه حتى لو البرنامج مقفول
+self.addEventListener("push", (event) => {
+  let data = { title: "Shery Share", body: "عندك إشعار جديد", url: "/chat" };
+  try {
+    data = event.data.json();
+  } catch (e) {
+    // لو الداتا مش JSON، نستخدم القيم الافتراضية
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Shery Share", {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url || "/chat" },
+    })
+  );
+});
+
+// الضغط على الإشعار يفتح البرنامج على نفس المحادثة/الصفحة
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/chat";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(targetUrl) && "focus" in client) return client.focus();
+      }
+      for (const client of clientList) {
+        if ("focus" in client) {
+          client.navigate ? client.navigate(targetUrl) : null;
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
+  );
+});
