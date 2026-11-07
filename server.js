@@ -903,9 +903,12 @@ app.post("/chat/:other/send", requireLogin, (req, res) => {
   const username = req.session.username;
   const other = (req.params.other || "").trim().toLowerCase();
   const users = loadUsers();
+  // ستيكر (إيموجي كبير بيتبعت على طول زي واتساب) أو رسالة نصية عادية
+  const sticker = (req.body.sticker || "").trim().slice(0, 8);
   const text = (req.body.text || "").trim().slice(0, 2000);
+  const isSticker = !!sticker;
 
-  if (!users[other] || other === username || !text) {
+  if (!users[other] || other === username || (!isSticker && !text)) {
     if (req.headers.accept && req.headers.accept.includes("application/json")) {
       return res.json({ ok: false });
     }
@@ -915,12 +918,16 @@ app.post("/chat/:other/send", requireLogin, (req, res) => {
   const chats = loadChats();
   const key = chatKey(username, other);
   if (!chats[key]) chats[key] = [];
-  chats[key].push({ from: username, type: "text", text, time: Date.now() });
+  if (isSticker) {
+    chats[key].push({ from: username, type: "sticker", text: sticker, time: Date.now() });
+  } else {
+    chats[key].push({ from: username, type: "text", text, time: Date.now() });
+  }
   saveChats(chats);
 
   sendPushToUser(other, {
     title: username,
-    body: text,
+    body: isSticker ? sticker : text,
     url: "/chat/" + username,
   });
 
