@@ -450,6 +450,15 @@ body {
 .drawer-logout:hover { background: #fdeef1; }
 .drawer-logout .drawer-nav-icon { background: #fdeef1; }
 
+.drawer-credit {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-weight: 600;
+  margin: 18px 10px 4px;
+  letter-spacing: 0.2px;
+}
+
 .disk-bar {
   width: calc(100% - 20px);
   margin: 0 10px 8px;

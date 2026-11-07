@@ -1,6 +1,6 @@
 // Shery Share - Service Worker
 // نسخة الكاش - غيّرها لو عدّلت ملفات static أساسية عشان تجبر تحديث فوري
-const CACHE_VERSION = "shery-v1";
+const CACHE_VERSION = "shery-v2";
 const STATIC_CACHE = `shery-static-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
@@ -52,18 +52,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // الملفات الثابتة (css/js/أيقونات): كاش أولًا، وتحديث في الخلفية
+  // الملفات الثابتة (css/js/أيقونات): الشبكة أولًا عشان أي تعديل جديد يبان فورًا،
+  // ولو مفيش نت يرجع للنسخة المخزنة (كاش) عشان البرنامج يفضل شغال أوفلاين
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, response.clone()));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || networkFetch;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          caches.open(STATIC_CACHE).then((cache) => cache.put(event.request, response.clone()));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
