@@ -748,12 +748,14 @@ button.drawer-nav-item {
   display: flex;
   gap: 6px;
   align-items: center;
-  padding: 5px 6px 5px 16px;
+  padding: 5px 10px;
   border: 1px solid var(--border);
   background: var(--card);
   border-radius: 999px;
   margin-top: 10px;
   box-shadow: var(--shadow-sm);
+  /* ثابت LTR عشان الإيموجي يفضل شمال والمايك والإرسال يفضلوا يمين بغض النظر عن لغة الواجهة */
+  direction: ltr;
 }
 .chat-input-bar input[type="text"] {
   flex: 1;
@@ -838,18 +840,45 @@ button.drawer-nav-item {
   inset-inline-start: 0;
   width: 290px;
   max-width: calc(100vw - 32px);
-  grid-template-columns: repeat(8, 1fr);
-  gap: 4px;
-  max-height: 220px;
-  overflow-y: auto;
+  max-height: 260px;
+  overflow: hidden;
   background: var(--card-solid);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 10px;
+  padding: 8px;
   box-shadow: var(--shadow-lg);
   z-index: 30;
+  /* ثابت LTR عشان تفضل تطلع من ناحية زرار الإيموجي (الشمال) بغض النظر عن لغة الواجهة */
+  direction: ltr;
 }
-.emoji-panel.open { display: grid; }
+.emoji-panel.open { display: flex; flex-direction: column; }
+.emoji-tabs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 6px;
+}
+.emoji-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 6px 4px;
+  font-size: 15px;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: background .12s ease, color .12s ease;
+}
+.emoji-tab.active { background: var(--border-soft); color: var(--text); font-weight: 700; }
+.emoji-grid, .sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
 .emoji-item {
   background: transparent;
   border: none;
@@ -861,11 +890,81 @@ button.drawer-nav-item {
   transition: background .12s ease;
 }
 .emoji-item:hover { background: var(--border-soft); }
+.sticker-item {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 6px 2px;
+  line-height: 1;
+  transition: background .12s ease, transform .12s ease;
+}
+.sticker-item:hover { background: var(--border-soft); transform: scale(1.12); }
+
+/* فقاعة الستيكر: بدون خلفية ولا ظل، إيموجي كبير زي واتساب بالظبط */
+.bubble.sticker-bubble {
+  background: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  align-items: inherit;
+}
+.sticker-emoji { font-size: 62px; line-height: 1; }
 
 /* مشغّل الرسائل الصوتية */
 .voice-player {
   height: 34px;
   max-width: 220px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* خلفية ثلاثية الأبعاد لصفحة الشات (كرات ضوئية عائمة بعمق)              */
+/* ---------------------------------------------------------------------- */
+.chat-page-3d {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(34,211,238,0.10), transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(2,132,199,0.12), transparent 45%),
+    var(--bg);
+}
+.chat-page-3d::before,
+.chat-page-3d::after {
+  content: "";
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(55px);
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+.chat-page-3d::before {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle at 30% 30%, #22d3ee, transparent 70%);
+  top: -70px;
+  inset-inline-start: -60px;
+  animation: float3d 9s ease-in-out infinite;
+}
+.chat-page-3d::after {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle at 70% 70%, #0284c7, transparent 70%);
+  bottom: -60px;
+  inset-inline-end: -40px;
+  animation: float3d 11s ease-in-out infinite reverse;
+}
+@keyframes float3d {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(16px, -20px, 0) scale(1.08); }
+}
+.chat-page-3d .app { position: relative; z-index: 1; }
+.chat-page-3d .bubble {
+  box-shadow: 0 6px 16px rgba(20,20,30,0.14), 0 1px 3px rgba(20,20,30,0.10);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-page-3d::before, .chat-page-3d::after { animation: none; }
 }
 .bubble:has(.voice-player) { padding: 8px 10px; background: transparent !important; box-shadow: none; }
 .bubble-row.mine .bubble:has(.voice-player) { background: var(--accent-grad) !important; }
