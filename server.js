@@ -583,7 +583,7 @@ const upload = multer({
       cb(null, safe);
     },
   }),
-  limits: { fileSize: 1024 * 1024 * 1024 }, // 1GB لكل ملف
+  limits: { fileSize: 5 * 1024 * 1024 * 1024 }, // 5GB لكل ملف
 });
 
 app.post("/upload", requireLogin, upload.array("files"), (req, res) => {
@@ -755,7 +755,7 @@ const sendUpload = multer({
       cb(null, `${sender}_${timestamp}_${safe}`);
     },
   }),
-  limits: { fileSize: 1024 * 1024 * 1024 }, // 1GB لكل ملف
+  limits: { fileSize: 5 * 1024 * 1024 * 1024 }, // 5GB لكل ملف
 });
 
 app.post(
