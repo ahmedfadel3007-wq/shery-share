@@ -67,33 +67,65 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// يحدّث شكل زرار/مفتاح الإشعارات (أون/أوف) حسب حالة الاشتراك الحالية
+function setNotifSwitchState(isOn) {
+  const btn = document.getElementById("notifToggleBtn");
+  const sw = document.getElementById("notifSwitch");
+  const label = btn ? btn.querySelector(".drawer-nav-label") : null;
+
+  if (btn) btn.classList.toggle("notif-on", isOn);
+  if (sw) sw.classList.toggle("on", isOn);
+  if (label) {
+    label.textContent = window.NOTIF_STRINGS
+      ? (isOn ? window.NOTIF_STRINGS.enabled : window.NOTIF_STRINGS.enableLabel)
+      : (isOn ? "Notifications on" : "Enable notifications");
+  }
+}
+
+// بيتنادي لما الصفحة تفتح، يشيك هل المستخدم مشترك فعليًا في الإشعارات ولا لأ
+// ويظبط شكل المفتاح على حسب كدة من غير أي أكشن من المستخدم
 function updateNotifBtnLabel(reg) {
   const btn = document.getElementById("notifToggleBtn");
   if (!btn || !("Notification" in window)) return;
   reg.pushManager.getSubscription().then((sub) => {
-    if (sub && Notification.permission === "granted") {
-      btn.classList.add("notif-on");
-    }
+    const isOn = !!sub && Notification.permission === "granted";
+    setNotifSwitchState(isOn);
   });
 }
 
-async function enableNotifications() {
-  const btn = document.getElementById("notifToggleBtn");
-  const label = btn ? btn.querySelector(".drawer-nav-label") || btn : null;
-
+// الدالة اللي بتتنادى من زرار المفتاح في الشريط الجانبي (onclick="toggleNotifications()")
+// بتفحص الحالة الحالية: لو الإشعارات شغالة تقفلها، ولو مقفولة تشغلها
+async function toggleNotifications() {
   if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
     alert(window.NOTIF_STRINGS ? window.NOTIF_STRINGS.unsupported : "Not supported");
     return;
   }
 
   try {
+    const reg = await navigator.serviceWorker.ready;
+    const existingSub = await reg.pushManager.getSubscription();
+    const currentlyOn = !!existingSub && Notification.permission === "granted";
+
+    if (currentlyOn) {
+      await disableNotifications(reg, existingSub);
+    } else {
+      await enableNotifications(reg);
+    }
+  } catch (err) {
+    console.warn("فشل تبديل حالة الإشعارات:", err);
+  }
+}
+
+async function enableNotifications(reg) {
+  try {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       alert(window.NOTIF_STRINGS ? window.NOTIF_STRINGS.denied : "Permission denied");
+      setNotifSwitchState(false);
       return;
     }
 
-    const reg = await navigator.serviceWorker.ready;
+    if (!reg) reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
       const keyRes = await fetch("/push-vapid-key");
@@ -110,9 +142,29 @@ async function enableNotifications() {
       body: JSON.stringify(sub),
     });
 
-    if (btn) btn.classList.add("notif-on");
-    if (label) label.textContent = window.NOTIF_STRINGS ? window.NOTIF_STRINGS.enabled : "Notifications on";
+    setNotifSwitchState(true);
   } catch (err) {
     console.warn("فشل تفعيل الإشعارات:", err);
+    setNotifSwitchState(false);
+  }
+}
+
+async function disableNotifications(reg, sub) {
+  try {
+    if (!reg) reg = await navigator.serviceWorker.ready;
+    if (!sub) sub = await reg.pushManager.getSubscription();
+
+    if (sub) {
+      await fetch("/push-unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub),
+      });
+      await sub.unsubscribe();
+    }
+
+    setNotifSwitchState(false);
+  } catch (err) {
+    console.warn("فشل إلغاء تفعيل الإشعارات:", err);
   }
 }
