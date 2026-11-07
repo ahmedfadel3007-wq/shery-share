@@ -15,9 +15,15 @@ const fs = require("fs");
 const path = require("path");
 
 const BASE_DIR = __dirname;
-const STORAGE_DIR = path.join(BASE_DIR, "storage");
-const USERS_FILE = path.join(BASE_DIR, "users.json");
+// DATA_DIR: المكان اللي بيتخزن فيه كل حاجة دائمة (حسابات + ملفات المستخدمين).
+// لو شغّال على استضافة سحابية (Suga) لازم تحطه يشاور على الـ volume الدائم (مثلاً /data)
+// عشان البيانات متتمسحش كل ما يحصل تحديث جديد للكود.
+const DATA_DIR = process.env.DATA_DIR || BASE_DIR;
+const STORAGE_DIR = path.join(DATA_DIR, "storage");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
 const PORT = process.env.CLOUD_PORT || 8080;
+
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, "{}", "utf-8");
