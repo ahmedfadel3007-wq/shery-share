@@ -168,9 +168,21 @@ body {
   font-weight: 600;
   border: 1px solid transparent;
   animation: riseIn 0.3s ease;
+  transition: opacity .4s ease, transform .4s ease, margin .4s ease, padding .4s ease, max-height .4s ease;
+  max-height: 100px;
+  overflow: hidden;
 }
 .msg.success { background: #eafaf0; color: var(--success); border-color: #c8f0d7; }
 .msg.error { background: #fdeef1; color: var(--danger); border-color: #f8d4dd; }
+.msg.msg-hide {
+  opacity: 0;
+  transform: translateY(-6px);
+  max-height: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+}
 
 .breadcrumbs { margin-bottom: 14px; font-size: 13.5px; color: var(--text-dim); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .breadcrumbs a { color: var(--text-dim); text-decoration: none; font-weight: 600; padding: 4px 6px; border-radius: 6px; }

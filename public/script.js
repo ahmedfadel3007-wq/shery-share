@@ -168,3 +168,15 @@ async function disableNotifications(reg, sub) {
     console.warn("فشل إلغاء تفعيل الإشعارات:", err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// إخفاء رسائل التنبيه (نجاح/خطأ زي "تم إرسال الملف بنجاح") تلقائيًا بعد ثانية
+// ---------------------------------------------------------------------------
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".msg").forEach((el) => {
+    setTimeout(() => {
+      el.classList.add("msg-hide");
+      setTimeout(() => el.remove(), 450);
+    }, 1000);
+  });
+});
