@@ -3,4 +3,5 @@ storage
 users.json
 chats.json
 chat_audio
+push_subs.json
 .git
