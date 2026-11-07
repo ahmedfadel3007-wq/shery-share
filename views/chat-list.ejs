@@ -6,7 +6,7 @@
   <title><%= t('chat_title') %> - Shery Share</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0a0b0f">
+  <meta name="theme-color" content="#f2f3f5">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="icon" href="/favicon.ico">
 </head>
@@ -15,11 +15,7 @@
     <header class="topbar">
       <a href="/browse/" class="hamburger-btn" style="text-decoration:none; display:inline-flex; align-items:center;" aria-label="<%= t('back_btn') %>">➜</a>
       <div class="brand"><img src="/icons/icon-192.png" class="brand-logo" alt=""> <span class="brand-text">Shery Share</span></div>
-      <div class="user-info">
-        <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="lang-toggle"><%= lang === 'ar' ? 'EN' : 'AR' %></a>
-        <span class="username">👤 <%= username %></span>
-        <a href="/logout" class="logout-btn"><%= t('nav_logout') %></a>
-      </div>
+      <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="lang-toggle"><%= lang === 'ar' ? 'EN' : 'AR' %></a>
     </header>
 
     <h2 class="radar-title" style="text-align:center; margin-bottom:18px;">💬 <%= t('chat_title') %></h2>

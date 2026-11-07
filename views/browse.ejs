@@ -6,7 +6,7 @@
   <title>Shery Share - <%= username %></title>
   <link rel="stylesheet" href="/style.css">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0a0b0f">
+  <meta name="theme-color" content="#f2f3f5">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="icon" href="/favicon.ico">
 </head>
@@ -15,16 +15,11 @@
     <header class="topbar">
       <button class="hamburger-btn" onclick="document.getElementById('sideDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open')" aria-label="menu">☰</button>
       <div class="brand"><img src="/icons/icon-192.png" class="brand-logo" alt=""> <span class="brand-text">Shery Share</span></div>
-      <div class="user-info">
-        <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="lang-toggle"><%= lang === 'ar' ? 'EN' : 'AR' %></a>
-        <a href="/chat" class="send-link">💬 <%= t('nav_chat') %></a>
-        <a href="/send" class="send-link">📡 <%= t('nav_send') %></a>
-        <a href="/browse/Received" class="received-link">
-          📥 <%= t('nav_received') %>
-          <% if (receivedCount > 0) { %><span class="badge"><%= receivedCount %></span><% } %>
-        </a>
-        <span class="username">👤 <%= username %></span>
-      </div>
+      <% if (receivedCount > 0) { %>
+        <a href="/browse/Received" class="hamburger-btn" style="text-decoration:none; position:relative;">📥<span class="badge" style="position:absolute; top:-4px; left:-4px;"><%= receivedCount %></span></a>
+      <% } else { %>
+        <span style="width:1px;"></span>
+      <% } %>
     </header>
 
     <% messages.forEach(m => { %>
@@ -120,16 +115,40 @@
     </div>
   </div>
 
-  <!-- الشريط الجانبي: مساحة التخزين -->
+  <!-- الشريط الجانبي: القائمة الرئيسية بالكامل -->
   <div id="drawerOverlay" class="drawer-overlay" onclick="document.getElementById('sideDrawer').classList.remove('open'); this.classList.remove('open')"></div>
   <aside id="sideDrawer" class="side-drawer">
     <div class="drawer-header">
-      <h3>📊 <%= t('storage_title') %></h3>
+      <img src="/icons/icon-192.png" class="brand-logo" alt="">
+      <div class="drawer-header-text">
+        <span class="dh-name">Shery Share</span>
+        <span class="dh-user">👤 <%= username %></span>
+      </div>
       <button onclick="document.getElementById('sideDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open')" class="close-btn">✕</button>
     </div>
 
     <div class="drawer-body">
-      <p class="drawer-sub"><%= t('storage_user_label') %> <strong><%= username %></strong></p>
+      <!-- قائمة التنقل -->
+      <ul class="drawer-nav">
+        <li><a href="/browse/" class="drawer-nav-item"><span class="drawer-nav-icon">🏠</span> <%= t('home') %></a></li>
+        <li>
+          <a href="/browse/Received" class="drawer-nav-item">
+            <span class="drawer-nav-icon">📥</span> <%= t('nav_received') %>
+            <% if (receivedCount > 0) { %><span class="badge"><%= receivedCount %></span><% } %>
+          </a>
+        </li>
+        <li><a href="/send" class="drawer-nav-item"><span class="drawer-nav-icon">📡</span> <%= t('nav_send') %></a></li>
+        <li><a href="/chat" class="drawer-nav-item"><span class="drawer-nav-icon">💬</span> <%= t('nav_chat') %></a></li>
+        <li>
+          <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="drawer-nav-item">
+            <span class="drawer-nav-icon">🌐</span> <%= lang === 'ar' ? 'English' : 'العربية' %>
+          </a>
+        </li>
+      </ul>
+
+      <hr class="drawer-divider">
+
+      <p class="drawer-section-title">📊 <%= t('storage_title') %></p>
 
       <!-- الشريط المتعدد الألوان -->
       <div class="storage-bar">
@@ -140,7 +159,7 @@
         <% }) %>
       </div>
 
-      <p class="drawer-total"><%= t('storage_total_label') %> <strong><%= humanSize(storageStats.usedByUser) %></strong></p>
+      <p class="drawer-total px"><%= t('storage_total_label') %> <strong><%= humanSize(storageStats.usedByUser) %></strong></p>
 
       <!-- تفاصيل كل فئة -->
       <ul class="category-list">
@@ -153,11 +172,9 @@
         <% }) %>
       </ul>
 
-      <hr class="drawer-divider">
-
       <!-- مساحة القرص الفعلية على الجهاز -->
       <% if (storageStats.disk.total > 0) { %>
-        <p class="drawer-sub"><%= t('disk_space_label') %></p>
+        <p class="drawer-sub px" style="margin-top:14px;"><%= t('disk_space_label') %></p>
         <div class="disk-bar">
           <div class="disk-bar-fill" style="width: <%= (storageStats.disk.used / storageStats.disk.total * 100).toFixed(1) %>%;"></div>
         </div>
@@ -169,7 +186,7 @@
 
       <hr class="drawer-divider">
 
-      <a href="/logout" class="drawer-logout">🚪 <%= t('nav_logout') %></a>
+      <a href="/logout" class="drawer-logout"><span class="drawer-nav-icon">🚪</span> <%= t('nav_logout') %></a>
     </div>
   </aside>
 

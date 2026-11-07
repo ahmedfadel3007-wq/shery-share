@@ -6,7 +6,7 @@
   <title><%= other %> - Shery Share</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0a0b0f">
+  <meta name="theme-color" content="#f2f3f5">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="icon" href="/favicon.ico">
 </head>
@@ -18,24 +18,23 @@
         <span class="chat-avatar" style="width:30px; height:30px; font-size:13px;"><%= other.charAt(0).toUpperCase() %></span>
         <span class="brand-text"><%= other %></span>
       </div>
-      <div class="user-info">
-        <a href="/logout" class="logout-btn"><%= t('nav_logout') %></a>
-      </div>
     </header>
 
     <div id="chatMessages" class="chat-messages"></div>
 
-    <!-- لوحة الإيموجي -->
-    <div id="emojiPanel" class="emoji-panel"></div>
+    <div style="position:relative; flex-shrink:0;">
+      <!-- لوحة الإيموجي (تطلع فوق مربع الكتابة زي بوباب، من غير ما تزق أي حاجة) -->
+      <div id="emojiPanel" class="emoji-panel"></div>
 
-    <form id="chatForm" class="chat-input-bar">
-      <button type="button" id="emojiBtn" class="chat-icon-btn" aria-label="emoji">😊</button>
-      <input type="text" id="chatInput" name="text" dir="auto" placeholder="<%= t('chat_placeholder') %>" autocomplete="off">
-      <button type="button" id="micBtn" class="chat-icon-btn mic-btn" aria-label="voice">🎤</button>
-      <button type="submit" id="sendBtn" class="chat-send-circle">➤</button>
-    </form>
-    <div id="recordingStatus" class="recording-status" style="display:none;">
-      <span class="rec-dot"></span> <span id="recordingTime">0:00</span>
+      <form id="chatForm" class="chat-input-bar">
+        <button type="button" id="emojiBtn" class="chat-icon-btn" aria-label="emoji">😊</button>
+        <input type="text" id="chatInput" name="text" dir="auto" placeholder="<%= t('chat_placeholder') %>" autocomplete="off">
+        <button type="button" id="micBtn" class="chat-icon-btn mic-btn" aria-label="voice">🎤</button>
+        <button type="submit" id="sendBtn" class="chat-send-circle">➤</button>
+      </form>
+      <div id="recordingStatus" class="recording-status" style="display:none;">
+        <span class="rec-dot"></span> <span id="recordingTime">0:00</span>
+      </div>
     </div>
   </div>
 
@@ -149,9 +148,17 @@
       });
       emojiPanel.appendChild(b);
     });
-    emojiBtn.addEventListener('click', () => {
+    emojiBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       emojiPanel.classList.toggle('open');
     });
+    // اقفل لوحة الإيموجي لو دست في أي مكان تاني بره اللوحة أو الزرار
+    document.addEventListener('click', (e) => {
+      if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+        emojiPanel.classList.remove('open');
+      }
+    });
+    emojiPanel.addEventListener('click', (e) => e.stopPropagation());
 
     // ------------------------------------------------------------------
     // الرسائل الصوتية (فويس نوت)
