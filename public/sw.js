@@ -67,6 +67,8 @@ self.addEventListener("fetch", (event) => {
 });
 
 // استقبال إشعار دفع (Push) من السيرفر وعرضه حتى لو البرنامج مقفول
+// الإشعار بيفضل ظاهر ثانية واحدة بس وبعدين بيقفل نفسه، عشان ميتراكمش في قائمة
+// إشعارات النظام (الداش بورد/Action Center) جوه وبرة البرنامج على حد سواء
 self.addEventListener("push", (event) => {
   let data = { title: "Shery Share", body: "عندك إشعار جديد", url: "/chat" };
   try {
@@ -75,13 +77,22 @@ self.addEventListener("push", (event) => {
     // لو الداتا مش JSON، نستخدم القيم الافتراضية
   }
 
+  const tag = "shery-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+
   event.waitUntil(
-    self.registration.showNotification(data.title || "Shery Share", {
-      body: data.body || "",
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      data: { url: data.url || "/chat" },
-    })
+    (async () => {
+      await self.registration.showNotification(data.title || "Shery Share", {
+        body: data.body || "",
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        tag,
+        data: { url: data.url || "/chat" },
+      });
+      // نسيبه ظاهر ثانية واحدة بس
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const shown = await self.registration.getNotifications({ tag });
+      shown.forEach((n) => n.close());
+    })()
   );
 });
 
