@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= t('chat_title') %> - Shery Share</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a0b0f">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a href="/browse/" class="hamburger-btn" style="text-decoration:none; display:inline-flex; align-items:center;" aria-label="<%= t('back_btn') %>">➜</a>
+      <div class="brand"><img src="/icons/icon-192.png" class="brand-logo" alt=""> <span class="brand-text">Shery Share</span></div>
+      <div class="user-info">
+        <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="lang-toggle"><%= lang === 'ar' ? 'EN' : 'AR' %></a>
+        <span class="username">👤 <%= username %></span>
+        <a href="/logout" class="logout-btn"><%= t('nav_logout') %></a>
+      </div>
+    </header>
+
+    <h2 class="radar-title" style="text-align:center; margin-bottom:18px;">💬 <%= t('chat_title') %></h2>
+
+    <div class="file-list">
+      <% if (otherUsers.length === 0) { %>
+        <p class="empty"><%= t('chat_empty') %></p>
+      <% } %>
+      <% otherUsers.forEach(u => { %>
+        <a href="/chat/<%= u.username %>" class="chat-contact-row">
+          <span class="chat-avatar"><%= u.username.charAt(0).toUpperCase() %></span>
+          <span style="flex:1; overflow:hidden;">
+            <strong style="display:block;"><%= u.username %></strong>
+            <% if (u.lastText) { %>
+              <span style="display:block; color:var(--text-dim); font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= u.lastText %></span>
+            <% } %>
+          </span>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+  <script src="/script.js"></script>
+</body>
+</html>

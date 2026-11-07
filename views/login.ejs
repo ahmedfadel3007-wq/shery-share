@@ -1,38 +1,40 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="<%= lang %>" dir="<%= dir %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تسجيل الدخول - Shery Share</title>
+  <title><%= t('login_title') %> - Shery Share</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#4a3fa8">
+  <meta name="theme-color" content="#0a0b0f">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="icon" href="/favicon.ico">
 </head>
 <body class="auth-page">
+  <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="lang-toggle lang-toggle-floating"><%= lang === 'ar' ? 'EN' : 'AR' %></a>
   <div class="auth-box">
-    <h1>🌩️ Shery Share</h1>
-    <h2>تسجيل الدخول</h2>
+    <img src="/icons/icon-192.png" class="brand-logo" alt="Shery Share">
+    <h1>Shery Share</h1>
+    <h2><%= t('login_title') %></h2>
 
     <% if (registered) { %>
-      <div class="msg success">تم إنشاء الحساب بنجاح، سجّل دخولك دلوقتي</div>
+      <div class="msg success"><%= t('registered_success') %></div>
     <% } %>
     <% if (error) { %>
       <div class="msg error"><%= error %></div>
     <% } %>
 
     <form method="POST" action="/login">
-      <label>اسم المستخدم</label>
+      <label><%= t('username_label') %></label>
       <input type="text" name="username" required autofocus>
 
-      <label>الباسورد</label>
+      <label><%= t('password_label') %></label>
       <input type="password" name="password" required>
 
-      <button type="submit">دخول</button>
+      <button type="submit"><%= t('login_btn') %></button>
     </form>
 
-    <p class="switch">معاك حساب جديد؟ <a href="/register">سجّل دلوقتي</a></p>
+    <p class="switch"><%= t('no_account') %> <a href="/register"><%= t('register_now') %></a></p>
   </div>
   <script src="/script.js"></script>
 </body>

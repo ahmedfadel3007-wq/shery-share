@@ -1,27 +1,29 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="<%= lang %>" dir="<%= dir %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shery Share - <%= username %></title>
   <link rel="stylesheet" href="/style.css">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#4a3fa8">
+  <meta name="theme-color" content="#0a0b0f">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="icon" href="/favicon.ico">
 </head>
 <body>
   <div class="app">
     <header class="topbar">
-      <button class="hamburger-btn" onclick="document.getElementById('sideDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open')" aria-label="القائمة">☰</button>
-      <div class="brand">🌩️ Shery Share</div>
+      <button class="hamburger-btn" onclick="document.getElementById('sideDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open')" aria-label="menu">☰</button>
+      <div class="brand"><img src="/icons/icon-192.png" class="brand-logo" alt=""> <span class="brand-text">Shery Share</span></div>
       <div class="user-info">
+        <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="lang-toggle"><%= lang === 'ar' ? 'EN' : 'AR' %></a>
+        <a href="/chat" class="send-link">💬 <%= t('nav_chat') %></a>
+        <a href="/send" class="send-link">📡 <%= t('nav_send') %></a>
         <a href="/browse/Received" class="received-link">
-          📥 الوارد
+          📥 <%= t('nav_received') %>
           <% if (receivedCount > 0) { %><span class="badge"><%= receivedCount %></span><% } %>
         </a>
         <span class="username">👤 <%= username %></span>
-        <a href="/logout" class="logout-btn">خروج</a>
       </div>
     </header>
 
@@ -30,7 +32,7 @@
     <% }) %>
 
     <nav class="breadcrumbs">
-      <a href="/browse/">🏠 الرئيسية</a>
+      <a href="/browse/">🏠 <%= t('home') %></a>
       <% breadcrumbs.forEach(b => { %>
         / <a href="/browse/<%= b.path %>"><%= b.name %></a>
       <% }) %>
@@ -40,17 +42,17 @@
       <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data" class="inline-form">
         <input type="hidden" name="subpath" value="<%= currentPath %>">
         <label class="btn file-btn">
-          📤 رفع ملفات
+          📤 <%= t('upload_btn') %>
           <input type="file" name="files" multiple onchange="document.getElementById('uploadForm').submit()">
         </label>
       </form>
 
-      <button class="btn" onclick="document.getElementById('mkdirModal').classList.add('open')">📁 مجلد جديد</button>
+      <button class="btn" onclick="document.getElementById('mkdirModal').classList.add('open')">📁 <%= t('new_folder_btn') %></button>
     </div>
 
     <div class="file-list">
       <% if (items.length === 0) { %>
-        <p class="empty">المجلد فاضي</p>
+        <p class="empty"><%= t('empty_folder') %></p>
       <% } %>
       <% items.forEach(item => { %>
         <div class="file-row">
@@ -64,16 +66,16 @@
 
           <div class="file-actions">
             <% if (!item.is_dir) { %>
-              <a href="/download/<%= item.rel_path %>" title="حفظ/تنزيل">⬇️</a>
-              <button title="إعادة توجيه لأي تطبيق (AirDrop/بلوتوث/واتساب)" onclick="forwardFile('/download/<%= item.rel_path %>', '<%= item.name %>')">↗️</button>
+              <a href="/download/<%= item.rel_path %>" title="<%= t('download_title') %>">⬇️</a>
+              <button title="<%= t('forward_title') %>" onclick="forwardFile('/download/<%= item.rel_path %>', '<%= item.name %>')">↗️</button>
               <% if (otherUsers.length > 0) { %>
-                <button title="مشاركة لمستخدم على السيرفر" onclick="openShare('<%= item.rel_path %>', '<%= item.name %>')">🔗</button>
+                <button title="<%= t('share_title') %>" onclick="openShare('<%= item.rel_path %>', '<%= item.name %>')">🔗</button>
               <% } %>
             <% } %>
-            <form method="POST" action="/delete" class="inline-form" onsubmit="return confirm('متأكد تحذف <%= item.name %>؟')">
+            <form method="POST" action="/delete" class="inline-form" onsubmit="return confirm('<%= t('confirm_delete') %> <%= item.name %>؟')">
               <input type="hidden" name="target" value="<%= item.rel_path %>">
               <input type="hidden" name="subpath" value="<%= currentPath %>">
-              <button title="حذف">🗑️</button>
+              <button title="<%= t('delete_title') %>">🗑️</button>
             </form>
           </div>
         </div>
@@ -84,13 +86,13 @@
   <!-- مودال مجلد جديد -->
   <div id="mkdirModal" class="modal">
     <div class="modal-box">
-      <h3>إنشاء مجلد جديد</h3>
+      <h3><%= t('mkdir_modal_title') %></h3>
       <form method="POST" action="/mkdir">
         <input type="hidden" name="subpath" value="<%= currentPath %>">
-        <input type="text" name="folder_name" placeholder="اسم المجلد" required autofocus>
+        <input type="text" name="folder_name" placeholder="<%= t('folder_name_placeholder') %>" required autofocus>
         <div class="modal-actions">
-          <button type="button" onclick="document.getElementById('mkdirModal').classList.remove('open')">إلغاء</button>
-          <button type="submit">إنشاء</button>
+          <button type="button" onclick="document.getElementById('mkdirModal').classList.remove('open')"><%= t('cancel_btn') %></button>
+          <button type="submit"><%= t('create_btn') %></button>
         </div>
       </form>
     </div>
@@ -99,20 +101,20 @@
   <!-- مودال مشاركة -->
   <div id="shareModal" class="modal">
     <div class="modal-box">
-      <h3>مشاركة ملف</h3>
+      <h3><%= t('share_modal_title') %></h3>
       <p id="shareFileName" class="share-filename"></p>
       <form method="POST" action="/share">
         <input type="hidden" name="subpath" value="<%= currentPath %>">
         <input type="hidden" name="target_file" id="shareTargetFile">
-        <label>ابعت لمستخدم:</label>
+        <label><%= t('send_to_label') %></label>
         <select name="recipient" required>
           <% otherUsers.forEach(u => { %>
             <option value="<%= u %>"><%= u %></option>
           <% }) %>
         </select>
         <div class="modal-actions">
-          <button type="button" onclick="document.getElementById('shareModal').classList.remove('open')">إلغاء</button>
-          <button type="submit">إرسال</button>
+          <button type="button" onclick="document.getElementById('shareModal').classList.remove('open')"><%= t('cancel_btn') %></button>
+          <button type="submit"><%= t('send_btn') %></button>
         </div>
       </form>
     </div>
@@ -122,30 +124,30 @@
   <div id="drawerOverlay" class="drawer-overlay" onclick="document.getElementById('sideDrawer').classList.remove('open'); this.classList.remove('open')"></div>
   <aside id="sideDrawer" class="side-drawer">
     <div class="drawer-header">
-      <h3>📊 مساحة التخزين</h3>
+      <h3>📊 <%= t('storage_title') %></h3>
       <button onclick="document.getElementById('sideDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open')" class="close-btn">✕</button>
     </div>
 
     <div class="drawer-body">
-      <p class="drawer-sub">المستخدم: <strong><%= username %></strong></p>
+      <p class="drawer-sub"><%= t('storage_user_label') %> <strong><%= username %></strong></p>
 
       <!-- الشريط المتعدد الألوان -->
       <div class="storage-bar">
         <% storageStats.categories.forEach(c => { %>
           <% if (c.bytes > 0) { %>
-            <div class="storage-bar-segment" style="width: <%= c.percentOfUsed %>%; background: <%= c.color %>;" title="<%= c.label %>: <%= humanSize(c.bytes) %>"></div>
+            <div class="storage-bar-segment" style="width: <%= c.percentOfUsed %>%; background: <%= c.color %>;" title="<%= t(c.labelKey) %>: <%= humanSize(c.bytes) %>"></div>
           <% } %>
         <% }) %>
       </div>
 
-      <p class="drawer-total">إجمالي استخدامك: <strong><%= humanSize(storageStats.usedByUser) %></strong></p>
+      <p class="drawer-total"><%= t('storage_total_label') %> <strong><%= humanSize(storageStats.usedByUser) %></strong></p>
 
       <!-- تفاصيل كل فئة -->
       <ul class="category-list">
         <% storageStats.categories.forEach(c => { %>
           <li>
             <span class="dot" style="background: <%= c.color %>;"></span>
-            <span class="cat-label"><%= c.label %></span>
+            <span class="cat-label"><%= t(c.labelKey) %></span>
             <span class="cat-size"><%= humanSize(c.bytes) %></span>
           </li>
         <% }) %>
@@ -155,15 +157,19 @@
 
       <!-- مساحة القرص الفعلية على الجهاز -->
       <% if (storageStats.disk.total > 0) { %>
-        <p class="drawer-sub">مساحة القرص على الجهاز:</p>
+        <p class="drawer-sub"><%= t('disk_space_label') %></p>
         <div class="disk-bar">
           <div class="disk-bar-fill" style="width: <%= (storageStats.disk.used / storageStats.disk.total * 100).toFixed(1) %>%;"></div>
         </div>
         <p class="drawer-disk-text">
-          متبقي <strong><%= humanSize(storageStats.disk.free) %></strong>
-          من إجمالي <strong><%= humanSize(storageStats.disk.total) %></strong>
+          <%= t('remaining_label') %> <strong><%= humanSize(storageStats.disk.free) %></strong>
+          <%= t('of_total_label') %> <strong><%= humanSize(storageStats.disk.total) %></strong>
         </p>
       <% } %>
+
+      <hr class="drawer-divider">
+
+      <a href="/logout" class="drawer-logout">🚪 <%= t('nav_logout') %></a>
     </div>
   </aside>
 

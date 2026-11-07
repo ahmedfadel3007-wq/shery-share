@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= t('radar_title') %> - Shery Share</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a0b0f">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a href="/browse/" class="hamburger-btn" style="text-decoration:none; display:inline-flex; align-items:center;" aria-label="<%= t('back_btn') %>">➜</a>
+      <div class="brand"><img src="/icons/icon-192.png" class="brand-logo" alt=""> <span class="brand-text">Shery Share</span></div>
+      <div class="user-info">
+        <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="lang-toggle"><%= lang === 'ar' ? 'EN' : 'AR' %></a>
+        <span class="username">👤 <%= username %></span>
+        <a href="/logout" class="logout-btn"><%= t('nav_logout') %></a>
+      </div>
+    </header>
+
+    <% messages.forEach(m => { %>
+      <div class="msg <%= m.type %>"><%= m.text %></div>
+    <% }) %>
+
+    <div class="radar-page">
+      <h2 class="radar-title"><%= t('radar_title') %></h2>
+      <p class="radar-sub"><%= t('radar_sub') %></p>
+
+      <div class="radar-wrap">
+        <div class="radar-rings">
+          <div class="radar-ring r3"></div>
+          <div class="radar-ring r2"></div>
+          <div class="radar-ring r1"></div>
+          <div class="radar-sweep"></div>
+          <div class="radar-center-dot"></div>
+
+          <% otherUsers.forEach((u, i) => {
+               const total = otherUsers.length;
+               const angle = (360 / total) * i - 90;
+               const rad = (angle * Math.PI) / 180;
+               const dist = 65 + (i % 3) * 20;
+               const cx = (130 + dist * Math.cos(rad)).toFixed(1);
+               const cy = (130 + dist * Math.sin(rad)).toFixed(1);
+          %>
+            <button type="button" class="radar-device" style="left: <%= cx %>px; top: <%= cy %>px;" onclick="selectDevice('<%= u %>')">
+              <span class="radar-device-dot"></span>
+              <span class="radar-device-label">👤 <%= u %></span>
+            </button>
+          <% }) %>
+        </div>
+      </div>
+
+      <% if (otherUsers.length === 0) { %>
+        <p class="empty"><%- t('radar_empty') %></p>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- مودال تأكيد الإرسال -->
+  <div id="confirmSendModal" class="modal">
+    <div class="modal-box">
+      <h3><%= t('radar_confirm_title') %></h3>
+      <p class="share-filename"><%= t('radar_confirm_q') %> <strong id="confirmDeviceName"></strong>؟</p>
+      <form method="POST" action="/send-direct" enctype="multipart/form-data">
+        <input type="hidden" name="recipient" id="confirmRecipientInput">
+        <label><%= t('choose_files') %></label>
+        <input type="file" name="files" multiple required>
+        <div class="modal-actions">
+          <button type="button" onclick="closeConfirm()"><%= t('cancel_btn') %></button>
+          <button type="submit"><%= t('confirm_send_btn') %></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function selectDevice(username) {
+      document.getElementById('confirmDeviceName').textContent = username;
+      document.getElementById('confirmRecipientInput').value = username;
+      document.getElementById('confirmSendModal').classList.add('open');
+    }
+    function closeConfirm() {
+      document.getElementById('confirmSendModal').classList.remove('open');
+    }
+  </script>
+  <script src="/script.js"></script>
+</body>
+</html>

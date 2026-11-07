@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= other %> - Shery Share</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a0b0f">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+  <div class="app" style="display:flex; flex-direction:column; height: 100vh; max-height: 100vh; padding-bottom: 14px;">
+    <header class="topbar" style="flex-shrink:0;">
+      <a href="/chat" class="hamburger-btn" style="text-decoration:none; display:inline-flex; align-items:center;" aria-label="<%= t('back_btn') %>">➜</a>
+      <div class="brand">
+        <span class="chat-avatar" style="width:30px; height:30px; font-size:13px;"><%= other.charAt(0).toUpperCase() %></span>
+        <span class="brand-text"><%= other %></span>
+      </div>
+      <div class="user-info">
+        <a href="/logout" class="logout-btn"><%= t('nav_logout') %></a>
+      </div>
+    </header>
+
+    <div id="chatMessages" class="chat-messages"></div>
+
+    <!-- لوحة الإيموجي -->
+    <div id="emojiPanel" class="emoji-panel"></div>
+
+    <form id="chatForm" class="chat-input-bar">
+      <button type="button" id="emojiBtn" class="chat-icon-btn" aria-label="emoji">😊</button>
+      <input type="text" id="chatInput" name="text" dir="auto" placeholder="<%= t('chat_placeholder') %>" autocomplete="off">
+      <button type="button" id="micBtn" class="chat-icon-btn mic-btn" aria-label="voice">🎤</button>
+      <button type="submit" id="sendBtn" class="chat-send-circle">➤</button>
+    </form>
+    <div id="recordingStatus" class="recording-status" style="display:none;">
+      <span class="rec-dot"></span> <span id="recordingTime">0:00</span>
+    </div>
+  </div>
+
+  <script>
+    const OTHER = <%- JSON.stringify(other) %>;
+    const ME = <%- JSON.stringify(username) %>;
+    const NO_MESSAGES_TEXT = <%- JSON.stringify(t('chat_no_messages')) %>;
+    const messagesEl = document.getElementById('chatMessages');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('chatInput');
+    let lastCount = -1;
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderMessages(messages) {
+      if (messages.length === lastCount) return; // بدون تحديث لو مفيش جديد
+      lastCount = messages.length;
+
+      const wasAtBottom = messagesEl.scrollTop + messagesEl.clientHeight >= messagesEl.scrollHeight - 40;
+
+      messagesEl.innerHTML = '';
+      if (messages.length === 0) {
+        const p = document.createElement('p');
+        p.className = 'empty';
+        p.textContent = NO_MESSAGES_TEXT;
+        messagesEl.appendChild(p);
+        return;
+      }
+
+      messages.forEach((m) => {
+        const row = document.createElement('div');
+        row.className = 'bubble-row ' + (m.from === ME ? 'mine' : 'theirs');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble ' + (m.from === ME ? 'mine' : 'theirs');
+
+        if (m.type === 'voice' && m.audioFile) {
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = '/chat-audio/' + encodeURIComponent(m.audioFile);
+          audio.className = 'voice-player';
+          bubble.appendChild(audio);
+        } else {
+          const textSpan = document.createElement('span');
+          textSpan.textContent = m.text; // textContent بس، مفيش innerHTML، أمان ضد XSS
+          textSpan.style.whiteSpace = 'pre-wrap';
+          bubble.appendChild(textSpan);
+        }
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'bubble-time';
+        timeSpan.textContent = formatTime(m.time);
+        bubble.appendChild(timeSpan);
+
+        row.appendChild(bubble);
+        messagesEl.appendChild(row);
+      });
+
+      if (wasAtBottom || lastCount <= 1) {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+    }
+
+    function poll() {
+      fetch('/chat/' + encodeURIComponent(OTHER) + '/data')
+        .then((r) => r.json())
+        .then((data) => renderMessages(data.messages || []))
+        .catch(() => {});
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      fetch('/chat/' + encodeURIComponent(OTHER) + '/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+        body: 'text=' + encodeURIComponent(text),
+      })
+        .then(() => {
+          lastCount = -1; // علشان نفرض تحديث فوري
+          poll();
+        })
+        .catch(() => {});
+    });
+
+    poll();
+    setInterval(poll, 2500);
+
+    // ------------------------------------------------------------------
+    // لوحة الإيموجي
+    // ------------------------------------------------------------------
+    const EMOJIS = ["😀","😂","🥰","😍","😘","😎","🤩","🥳","😅","😇","🙂","🙃","😉","😊","😋","😜","🤔","😏","😴","🤗","🙄","😢","😭","😡","😱","🤯","👍","👎","🙏","👏","💪","🤝","👋","✌️","🤞","❤️","🧡","💛","💚","💙","💜","🖤","🤍","💔","💯","🔥","✨","🎉","🎁","⭐","☀️","🌙","☕","🍕","🍔","🍰","🚗","✈️","📸","🎵","⚽","📍"];
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPanel = document.getElementById('emojiPanel');
+    EMOJIS.forEach((e) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'emoji-item';
+      b.textContent = e;
+      b.addEventListener('click', () => {
+        const start = input.selectionStart || input.value.length;
+        const end = input.selectionEnd || input.value.length;
+        input.value = input.value.slice(0, start) + e + input.value.slice(end);
+        input.focus();
+        input.selectionStart = input.selectionEnd = start + e.length;
+      });
+      emojiPanel.appendChild(b);
+    });
+    emojiBtn.addEventListener('click', () => {
+      emojiPanel.classList.toggle('open');
+    });
+
+    // ------------------------------------------------------------------
+    // الرسائل الصوتية (فويس نوت)
+    // ------------------------------------------------------------------
+    const micBtn = document.getElementById('micBtn');
+    const recordingStatus = document.getElementById('recordingStatus');
+    const recordingTimeEl = document.getElementById('recordingTime');
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordStartTime = 0;
+    let recordTimerInterval = null;
+    let isRecording = false;
+
+    function updateRecordingTimer() {
+      const secs = Math.floor((Date.now() - recordStartTime) / 1000);
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      recordingTimeEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach((t) => t.stop());
+          const durationMs = Date.now() - recordStartTime;
+          if (durationMs < 700) return; // تسجيل قصير جدًا، اتجاهله
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const fd = new FormData();
+          fd.append('audio', blob, 'voice.webm');
+          fetch('/chat/' + encodeURIComponent(OTHER) + '/send-voice', { method: 'POST', body: fd })
+            .then(() => { lastCount = -1; poll(); })
+            .catch(() => {});
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        recordStartTime = Date.now();
+        micBtn.classList.add('recording');
+        recordingStatus.style.display = 'flex';
+        recordTimerInterval = setInterval(updateRecordingTimer, 500);
+      } catch (err) {
+        alert('مينفعش نوصل للميكروفون. تأكد إنك سامح المتصفح يستخدم الميكروفون.');
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+      }
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      recordingStatus.style.display = 'none';
+      clearInterval(recordTimerInterval);
+    }
+
+    micBtn.addEventListener('click', () => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
+  </script>
+  <script src="/script.js"></script>
+</body>
+</html>
