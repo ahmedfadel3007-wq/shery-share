@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="icon" href="/favicon.ico">
 </head>
-<body>
+<body class="chat-page-3d">
   <div class="app" style="display:flex; flex-direction:column; height: 100vh; max-height: 100vh; padding-bottom: 14px;">
     <header class="topbar" style="flex-shrink:0;">
       <a href="/chat" class="hamburger-btn" style="text-decoration:none; display:inline-flex; align-items:center;" aria-label="<%= t('back_btn') %>">➜</a>
@@ -23,8 +23,15 @@
     <div id="chatMessages" class="chat-messages"></div>
 
     <div style="position:relative; flex-shrink:0;">
-      <!-- لوحة الإيموجي (تطلع فوق مربع الكتابة زي بوباب، من غير ما تزق أي حاجة) -->
-      <div id="emojiPanel" class="emoji-panel"></div>
+      <!-- لوحة الإيموجي والستيكرز (تطلع فوق مربع الكتابة زي بوباب، من غير ما تزق أي حاجة) -->
+      <div id="emojiPanel" class="emoji-panel">
+        <div class="emoji-tabs">
+          <button type="button" class="emoji-tab active" data-tab="emoji">😊</button>
+          <button type="button" class="emoji-tab" data-tab="sticker">⭐</button>
+        </div>
+        <div id="emojiGrid" class="emoji-grid"></div>
+        <div id="stickerGrid" class="sticker-grid" style="display:none;"></div>
+      </div>
 
       <form id="chatForm" class="chat-input-bar">
         <button type="button" id="emojiBtn" class="chat-icon-btn" aria-label="emoji">😊</button>
@@ -80,6 +87,12 @@
           audio.src = '/chat-audio/' + encodeURIComponent(m.audioFile);
           audio.className = 'voice-player';
           bubble.appendChild(audio);
+        } else if (m.type === 'sticker') {
+          bubble.classList.add('sticker-bubble');
+          const stickerSpan = document.createElement('span');
+          stickerSpan.className = 'sticker-emoji';
+          stickerSpan.textContent = m.text;
+          bubble.appendChild(stickerSpan);
         } else {
           const textSpan = document.createElement('span');
           textSpan.textContent = m.text; // textContent بس، مفيش innerHTML، أمان ضد XSS
@@ -132,8 +145,12 @@
     // لوحة الإيموجي
     // ------------------------------------------------------------------
     const EMOJIS = ["😀","😂","🥰","😍","😘","😎","🤩","🥳","😅","😇","🙂","🙃","😉","😊","😋","😜","🤔","😏","😴","🤗","🙄","😢","😭","😡","😱","🤯","👍","👎","🙏","👏","💪","🤝","👋","✌️","🤞","❤️","🧡","💛","💚","💙","💜","🖤","🤍","💔","💯","🔥","✨","🎉","🎁","⭐","☀️","🌙","☕","🍕","🍔","🍰","🚗","✈️","📸","🎵","⚽","📍"];
+    const STICKERS = ["😂","🥹","😍","🤩","🥳","😎","😭","🙈","🤗","💖","🔥","👏","🙏","💯","🎉","🤝","👍","👎","😡","😴","🤔","🫶","💔","🌹","🎂","☕","🍕","🐱","🐶","⚽","✨","🎊"];
     const emojiBtn = document.getElementById('emojiBtn');
     const emojiPanel = document.getElementById('emojiPanel');
+    const emojiGrid = document.getElementById('emojiGrid');
+    const stickerGrid = document.getElementById('stickerGrid');
+
     EMOJIS.forEach((e) => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -146,8 +163,39 @@
         input.focus();
         input.selectionStart = input.selectionEnd = start + e.length;
       });
-      emojiPanel.appendChild(b);
+      emojiGrid.appendChild(b);
     });
+
+    // الستيكرز: زي واتساب، بتتبعت على طول لما تدوس عليها (مش بتتضاف لمربع الكتابة)
+    STICKERS.forEach((s) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sticker-item';
+      b.textContent = s;
+      b.addEventListener('click', () => {
+        emojiPanel.classList.remove('open');
+        fetch('/chat/' + encodeURIComponent(OTHER) + '/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+          body: 'sticker=' + encodeURIComponent(s),
+        })
+          .then(() => { lastCount = -1; poll(); })
+          .catch(() => {});
+      });
+      stickerGrid.appendChild(b);
+    });
+
+    // التبديل بين تاب الإيموجي وتاب الستيكرز
+    document.querySelectorAll('.emoji-tab').forEach((tabBtn) => {
+      tabBtn.addEventListener('click', () => {
+        document.querySelectorAll('.emoji-tab').forEach((x) => x.classList.remove('active'));
+        tabBtn.classList.add('active');
+        const tab = tabBtn.dataset.tab;
+        emojiGrid.style.display = tab === 'emoji' ? 'grid' : 'none';
+        stickerGrid.style.display = tab === 'sticker' ? 'grid' : 'none';
+      });
+    });
+
     emojiBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       emojiPanel.classList.toggle('open');
