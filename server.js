@@ -13,6 +13,7 @@ const multer = require("multer");
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
 const path = require("path");
+const webpush = require("web-push");
 
 const BASE_DIR = __dirname;
 // DATA_DIR: المكان اللي بيتخزن فيه كل حاجة دائمة (حسابات + ملفات المستخدمين).
@@ -32,6 +33,7 @@ const app = express();
 app.set("view engine", "ejs");
 app.set("views", path.join(BASE_DIR, "views"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(express.static(path.join(BASE_DIR, "public")));
 app.use(
   session({
@@ -107,6 +109,17 @@ const STRINGS = {
     radar_empty: "لسه مفيش أجهزة ظاهرة على الرادار 📡<br>لازم شخص تاني يعمل حساب على نفس السيرفر الأول عشان يظهر هنا.",
     radar_confirm_title: "📡 تم اكتشاف جهاز",
     radar_confirm_q: "هل تريد الإرسال إلى",
+    radar_search_btn: "🔍 ابدأ البحث",
+    radar_searching: "جاري البحث عن أجهزة قريبة...",
+    radar_found_one: "✅ تم العثور على جهاز واحد",
+    radar_found_many: "✅ تم العثور على {n} أجهزة",
+    radar_found_none: "⚠️ لم يتم العثور على أي جهاز",
+    push_voice_body: "🎤 رسالة صوتية",
+    push_file_received_body: "📥 بعتلك ملف جديد",
+    notif_enable_btn: "🔔 تفعيل الإشعارات",
+    notif_enabled_msg: "✅ الإشعارات شغالة",
+    notif_denied_msg: "⚠️ لازم تسمح بالإشعارات من إعدادات المتصفح",
+    notif_unsupported_msg: "المتصفح ده مش بيدعم الإشعارات",
     choose_files: "اختار الملف أو الملفات",
     confirm_send_btn: "✅ موافق - إرسال",
     back_btn: "رجوع",
@@ -197,6 +210,17 @@ const STRINGS = {
     radar_empty: "No devices on the radar yet 📡<br>Another person needs to create an account on the same server first to show up here.",
     radar_confirm_title: "📡 Device discovered",
     radar_confirm_q: "Do you want to send to",
+    radar_search_btn: "🔍 Start Search",
+    radar_searching: "Searching for nearby devices...",
+    radar_found_one: "✅ Found 1 device",
+    radar_found_many: "✅ Found {n} devices",
+    radar_found_none: "⚠️ No devices found",
+    push_voice_body: "🎤 Voice message",
+    push_file_received_body: "📥 Sent you a new file",
+    notif_enable_btn: "🔔 Enable Notifications",
+    notif_enabled_msg: "✅ Notifications are on",
+    notif_denied_msg: "⚠️ Please allow notifications from your browser settings",
+    notif_unsupported_msg: "This browser doesn't support notifications",
     choose_files: "Choose file(s)",
     confirm_send_btn: "✅ OK - Send",
     back_btn: "Back",
@@ -778,6 +802,13 @@ app.post(
       count ? "success" : "error",
       count ? res.locals.t("send_direct_success", { count, recipient }) : res.locals.t("send_direct_none")
     );
+    if (count) {
+      sendPushToUser(recipient, {
+        title: req.session.username,
+        body: res.locals.t("push_file_received_body"),
+        url: "/browse/Received",
+      });
+    }
     res.redirect("/send");
   }
 );
@@ -887,6 +918,12 @@ app.post("/chat/:other/send", requireLogin, (req, res) => {
   chats[key].push({ from: username, type: "text", text, time: Date.now() });
   saveChats(chats);
 
+  sendPushToUser(other, {
+    title: username,
+    body: text,
+    url: "/chat/" + username,
+  });
+
   if (req.headers.accept && req.headers.accept.includes("application/json")) {
     return res.json({ ok: true });
   }
@@ -910,8 +947,89 @@ app.post("/chat/:other/send-voice", requireLogin, voiceUpload.single("audio"), (
   chats[key].push({ from: username, type: "voice", audioFile: req.file.filename, time: Date.now() });
   saveChats(chats);
 
+  sendPushToUser(other, {
+    title: username,
+    body: res.locals.t("push_voice_body"),
+    url: "/chat/" + username,
+  });
+
   res.json({ ok: true });
 });
+
+// ---------------------------------------------------------------------------
+// إشعارات الدفع (Web Push) — عشان توصل رسالة للمستخدم حتى لو البرنامج مقفول
+// ---------------------------------------------------------------------------
+const VAPID_PUBLIC_KEY =
+  process.env.VAPID_PUBLIC_KEY ||
+  "BJVhHkWmL0yizcckrzjO9f0Mje0oYt47u-iQEiOO1OSJcEQNYYItQkv9Cl6bXAxlfym2VbX7KqCuTGiC1h9YeMI";
+const VAPID_PRIVATE_KEY =
+  process.env.VAPID_PRIVATE_KEY || "LQEq1kCMxUJ_M4PDdbV843w702yyb4Wp8Pd6UEK7tqc";
+
+webpush.setVapidDetails("mailto:admin@example.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+
+const PUSH_FILE = path.join(DATA_DIR, "push_subs.json");
+if (!fs.existsSync(PUSH_FILE)) fs.writeFileSync(PUSH_FILE, "{}", "utf-8");
+
+function loadPushSubs() {
+  try {
+    return JSON.parse(fs.readFileSync(PUSH_FILE, "utf-8"));
+  } catch (e) {
+    return {};
+  }
+}
+function savePushSubs(subs) {
+  fs.writeFileSync(PUSH_FILE, JSON.stringify(subs, null, 2), "utf-8");
+}
+
+app.get("/push-vapid-key", requireLogin, (req, res) => {
+  res.json({ key: VAPID_PUBLIC_KEY });
+});
+
+app.post("/push-subscribe", requireLogin, (req, res) => {
+  const username = req.session.username;
+  const sub = req.body;
+  if (!sub || !sub.endpoint) return res.status(400).json({ ok: false });
+
+  const subs = loadPushSubs();
+  if (!subs[username]) subs[username] = [];
+  // امنع تكرار نفس الاشتراك (لو اتسجل أكتر من مرة من نفس المتصفح)
+  subs[username] = subs[username].filter((s) => s.endpoint !== sub.endpoint);
+  subs[username].push(sub);
+  savePushSubs(subs);
+
+  res.json({ ok: true });
+});
+
+app.post("/push-unsubscribe", requireLogin, (req, res) => {
+  const username = req.session.username;
+  const endpoint = (req.body && req.body.endpoint) || "";
+  const subs = loadPushSubs();
+  if (subs[username]) {
+    subs[username] = subs[username].filter((s) => s.endpoint !== endpoint);
+    savePushSubs(subs);
+  }
+  res.json({ ok: true });
+});
+
+// يبعت إشعار لكل الأجهزة المسجلة لمستخدم معين (ومن غير ما يوقف الطلب الأساسي لو فشل)
+function sendPushToUser(username, payload) {
+  const subs = loadPushSubs();
+  const userSubs = subs[username] || [];
+  if (userSubs.length === 0) return;
+
+  let changed = false;
+  userSubs.forEach((sub) => {
+    webpush.sendNotification(sub, JSON.stringify(payload)).catch((err) => {
+      if (err && (err.statusCode === 404 || err.statusCode === 410)) {
+        subs[username] = (subs[username] || []).filter((s) => s.endpoint !== sub.endpoint);
+        changed = true;
+        savePushSubs(subs);
+      } else {
+        console.warn("تعذر إرسال إشعار:", err && err.message);
+      }
+    });
+  });
+}
 
 // ---------------------------------------------------------------------------
 // تشغيل السيرفر

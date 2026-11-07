@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shery Share - <%= username %></title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#f2f3f5">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="hamburger-btn" onclick="document.getElementById('sideDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open')" aria-label="menu">☰</button>
+      <div class="brand"><img src="/icons/icon-192.png" class="brand-logo" alt=""> <span class="brand-text">Shery Share</span></div>
+      <% if (receivedCount > 0) { %>
+        <a href="/browse/Received" class="hamburger-btn" style="text-decoration:none; position:relative;">📥<span class="badge" style="position:absolute; top:-4px; left:-4px;"><%= receivedCount %></span></a>
+      <% } else { %>
+        <span style="width:1px;"></span>
+      <% } %>
+    </header>
+
+    <% messages.forEach(m => { %>
+      <div class="msg <%= m.type %>"><%= m.text %></div>
+    <% }) %>
+
+    <nav class="breadcrumbs">
+      <a href="/browse/">🏠 <%= t('home') %></a>
+      <% breadcrumbs.forEach(b => { %>
+        / <a href="/browse/<%= b.path %>"><%= b.name %></a>
+      <% }) %>
+    </nav>
+
+    <div class="toolbar">
+      <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data" class="inline-form">
+        <input type="hidden" name="subpath" value="<%= currentPath %>">
+        <label class="btn file-btn">
+          📤 <%= t('upload_btn') %>
+          <input type="file" name="files" multiple onchange="document.getElementById('uploadForm').submit()">
+        </label>
+      </form>
+
+      <button class="btn" onclick="document.getElementById('mkdirModal').classList.add('open')">📁 <%= t('new_folder_btn') %></button>
+    </div>
+
+    <div class="file-list">
+      <% if (items.length === 0) { %>
+        <p class="empty"><%= t('empty_folder') %></p>
+      <% } %>
+      <% items.forEach(item => { %>
+        <div class="file-row">
+          <% if (item.is_dir) { %>
+            <a class="file-name" href="/browse/<%= item.rel_path %>"><%= item.icon %> <%= item.name %></a>
+          <% } else { %>
+            <span class="file-name"><%= item.icon %> <%= item.name %></span>
+          <% } %>
+
+          <span class="file-size"><%= item.is_dir ? '' : humanSize(item.size) %></span>
+
+          <div class="file-actions">
+            <% if (!item.is_dir) { %>
+              <a href="/download/<%= item.rel_path %>" title="<%= t('download_title') %>">⬇️</a>
+              <button title="<%= t('forward_title') %>" onclick="forwardFile('/download/<%= item.rel_path %>', '<%= item.name %>')">↗️</button>
+              <% if (otherUsers.length > 0) { %>
+                <button title="<%= t('share_title') %>" onclick="openShare('<%= item.rel_path %>', '<%= item.name %>')">🔗</button>
+              <% } %>
+            <% } %>
+            <form method="POST" action="/delete" class="inline-form" onsubmit="return confirm('<%= t('confirm_delete') %> <%= item.name %>؟')">
+              <input type="hidden" name="target" value="<%= item.rel_path %>">
+              <input type="hidden" name="subpath" value="<%= currentPath %>">
+              <button title="<%= t('delete_title') %>">🗑️</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- مودال مجلد جديد -->
+  <div id="mkdirModal" class="modal">
+    <div class="modal-box">
+      <h3><%= t('mkdir_modal_title') %></h3>
+      <form method="POST" action="/mkdir">
+        <input type="hidden" name="subpath" value="<%= currentPath %>">
+        <input type="text" name="folder_name" placeholder="<%= t('folder_name_placeholder') %>" required autofocus>
+        <div class="modal-actions">
+          <button type="button" onclick="document.getElementById('mkdirModal').classList.remove('open')"><%= t('cancel_btn') %></button>
+          <button type="submit"><%= t('create_btn') %></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- مودال مشاركة -->
+  <div id="shareModal" class="modal">
+    <div class="modal-box">
+      <h3><%= t('share_modal_title') %></h3>
+      <p id="shareFileName" class="share-filename"></p>
+      <form method="POST" action="/share">
+        <input type="hidden" name="subpath" value="<%= currentPath %>">
+        <input type="hidden" name="target_file" id="shareTargetFile">
+        <label><%= t('send_to_label') %></label>
+        <select name="recipient" required>
+          <% otherUsers.forEach(u => { %>
+            <option value="<%= u %>"><%= u %></option>
+          <% }) %>
+        </select>
+        <div class="modal-actions">
+          <button type="button" onclick="document.getElementById('shareModal').classList.remove('open')"><%= t('cancel_btn') %></button>
+          <button type="submit"><%= t('send_btn') %></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- الشريط الجانبي: القائمة الرئيسية بالكامل -->
+  <div id="drawerOverlay" class="drawer-overlay" onclick="document.getElementById('sideDrawer').classList.remove('open'); this.classList.remove('open')"></div>
+  <aside id="sideDrawer" class="side-drawer">
+    <div class="drawer-header">
+      <img src="/icons/icon-192.png" class="brand-logo" alt="">
+      <div class="drawer-header-text">
+        <span class="dh-name">Shery Share</span>
+        <span class="dh-user">👤 <%= username %></span>
+      </div>
+      <button onclick="document.getElementById('sideDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open')" class="close-btn">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- قائمة التنقل -->
+      <ul class="drawer-nav">
+        <li><a href="/browse/" class="drawer-nav-item"><span class="drawer-nav-icon">🏠</span> <%= t('home') %></a></li>
+        <li>
+          <a href="/browse/Received" class="drawer-nav-item">
+            <span class="drawer-nav-icon">📥</span> <%= t('nav_received') %>
+            <% if (receivedCount > 0) { %><span class="badge"><%= receivedCount %></span><% } %>
+          </a>
+        </li>
+        <li><a href="/send" class="drawer-nav-item"><span class="drawer-nav-icon">📡</span> <%= t('nav_send') %></a></li>
+        <li><a href="/chat" class="drawer-nav-item"><span class="drawer-nav-icon">💬</span> <%= t('nav_chat') %></a></li>
+        <li>
+          <a href="/set-lang/<%= lang === 'ar' ? 'en' : 'ar' %>" class="drawer-nav-item">
+            <span class="drawer-nav-icon">🌐</span> <%= lang === 'ar' ? 'English' : 'العربية' %>
+          </a>
+        </li>
+        <li>
+          <button type="button" id="notifToggleBtn" class="drawer-nav-item notif-toggle-btn" onclick="enableNotifications()">
+            <span class="drawer-nav-icon">🔔</span>
+            <span class="drawer-nav-label"><%= t('notif_enable_btn') %></span>
+          </button>
+        </li>
+      </ul>
+
+      <hr class="drawer-divider">
+
+      <p class="drawer-section-title">📊 <%= t('storage_title') %></p>
+
+      <!-- الشريط المتعدد الألوان -->
+      <div class="storage-bar">
+        <% storageStats.categories.forEach(c => { %>
+          <% if (c.bytes > 0) { %>
+            <div class="storage-bar-segment" style="width: <%= c.percentOfUsed %>%; background: <%= c.color %>;" title="<%= t(c.labelKey) %>: <%= humanSize(c.bytes) %>"></div>
+          <% } %>
+        <% }) %>
+      </div>
+
+      <p class="drawer-total px"><%= t('storage_total_label') %> <strong><%= humanSize(storageStats.usedByUser) %></strong></p>
+
+      <!-- تفاصيل كل فئة -->
+      <ul class="category-list">
+        <% storageStats.categories.forEach(c => { %>
+          <li>
+            <span class="dot" style="background: <%= c.color %>;"></span>
+            <span class="cat-label"><%= t(c.labelKey) %></span>
+            <span class="cat-size"><%= humanSize(c.bytes) %></span>
+          </li>
+        <% }) %>
+      </ul>
+
+      <!-- مساحة القرص الفعلية على الجهاز -->
+      <% if (storageStats.disk.total > 0) { %>
+        <p class="drawer-sub px" style="margin-top:8px;"><%= t('disk_space_label') %></p>
+        <div class="disk-bar">
+          <div class="disk-bar-fill" style="width: <%= (storageStats.disk.used / storageStats.disk.total * 100).toFixed(1) %>%;"></div>
+        </div>
+        <p class="drawer-disk-text">
+          <%= t('remaining_label') %> <strong><%= humanSize(storageStats.disk.free) %></strong>
+          <%= t('of_total_label') %> <strong><%= humanSize(storageStats.disk.total) %></strong>
+        </p>
+      <% } %>
+
+      <hr class="drawer-divider">
+
+      <a href="/logout" class="drawer-logout"><span class="drawer-nav-icon">🚪</span> <%= t('nav_logout') %></a>
+
+      <p class="drawer-credit">Developed by Eng. Ahmed Fadel</p>
+    </div>
+  </aside>
+
+  <script>
+    window.NOTIF_STRINGS = {
+      enabled: <%- JSON.stringify(t('notif_enabled_msg')) %>,
+      denied: <%- JSON.stringify(t('notif_denied_msg')) %>,
+      unsupported: <%- JSON.stringify(t('notif_unsupported_msg')) %>,
+    };
+  </script>
+  <script src="/script.js"></script>
+</body>
+</html>
