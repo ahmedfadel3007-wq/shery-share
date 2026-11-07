@@ -1,4 +1,6 @@
 node_modules
 storage
 users.json
+chats.json
+chat_audio
 .git
