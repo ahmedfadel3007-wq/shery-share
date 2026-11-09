@@ -5,3 +5,4 @@ chats.json
 chat_audio/
 push_subs.json
 .DS_Store
+.env

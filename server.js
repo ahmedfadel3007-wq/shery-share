@@ -35,9 +35,16 @@ app.set("views", path.join(BASE_DIR, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(BASE_DIR, "public")));
+if (!process.env.CLOUD_SECRET_KEY) {
+  console.warn(
+    "⚠️  CLOUD_SECRET_KEY غير موجود في .env — هيتولد سر مؤقت عشوائي بدل القيمة الافتراضية المعروفة (sessions هتتمسح لو السيرفر اتعاد تشغيله). ضيفه في .env عشان الجلسات تفضل ثابتة. راجع .env.example"
+  );
+}
+const SESSION_SECRET = process.env.CLOUD_SECRET_KEY || require("crypto").randomBytes(48).toString("hex");
+
 app.use(
   session({
-    secret: process.env.CLOUD_SECRET_KEY || "change-this-secret-key-please",
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }, // أسبوع
@@ -966,13 +973,16 @@ app.post("/chat/:other/send-voice", requireLogin, voiceUpload.single("audio"), (
 // ---------------------------------------------------------------------------
 // إشعارات الدفع (Web Push) — عشان توصل رسالة للمستخدم حتى لو البرنامج مقفول
 // ---------------------------------------------------------------------------
-const VAPID_PUBLIC_KEY =
-  process.env.VAPID_PUBLIC_KEY ||
-  "BJVhHkWmL0yizcckrzjO9f0Mje0oYt47u-iQEiOO1OSJcEQNYYItQkv9Cl6bXAxlfym2VbX7KqCuTGiC1h9YeMI";
-const VAPID_PRIVATE_KEY =
-  process.env.VAPID_PRIVATE_KEY || "LQEq1kCMxUJ_M4PDdbV843w702yyb4Wp8Pd6UEK7tqc";
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
-webpush.setVapidDetails("mailto:admin@example.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  console.warn(
+    "⚠️  VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY غير موجودين في .env — إشعارات الـ Push مش هتشتغل. راجع .env.example."
+  );
+} else {
+  webpush.setVapidDetails("mailto:admin@example.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
 
 const PUSH_FILE = path.join(DATA_DIR, "push_subs.json");
 if (!fs.existsSync(PUSH_FILE)) fs.writeFileSync(PUSH_FILE, "{}", "utf-8");
